@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>BaccaCode</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14213d">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script>
+    /* Choose language + direction before first paint. Both Bootstrap builds are
+       linked; only the one matching the direction applies (media="all" vs "not all"),
+       so switching language later is instant and never flashes unstyled content. */
+    (function () {
+      var lang = 'en';
+      try {
+        lang = localStorage.getItem('bc.lang') || (/^ar/i.test(navigator.language) ? 'ar' : 'en');
+      } catch (e) {}
+      var rtl = lang === 'ar';
+      var root = document.documentElement;
+      root.lang = lang;
+      root.dir = rtl ? 'rtl' : 'ltr';
+      document.write(
+        '<link id="bs-ltr" rel="stylesheet" href="vendor/bootstrap.min.css" media="' + (rtl ? 'not all' : 'all') + '">' +
+        '<link id="bs-rtl" rel="stylesheet" href="vendor/bootstrap.rtl.min.css" media="' + (rtl ? 'all' : 'not all') + '">'
+      );
+    })();
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

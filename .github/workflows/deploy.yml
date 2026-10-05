@@ -1,0 +1,67 @@
+# Builds the Angular app and publishes it to GitHub Pages on every push to main.
+# One-time setup: repository Settings → Pages → Build and deployment → Source: "GitHub Actions".
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # Angular 22 needs Node 22.22.3+ or 24.15+
+          cache: npm
+
+      - run: npm ci
+
+      - name: Unit tests
+        run: npm test -- --watch=false
+
+      # A project site lives at https://<user>.github.io/<repo>/, so the app must know its sub-path.
+      # A repository named <user>.github.io is served from the root instead.
+      - name: Work out the base href
+        run: |
+          repo="${{ github.event.repository.name }}"
+          if [[ "$repo" == *.github.io ]]; then
+            echo "BASE_HREF=/" >> "$GITHUB_ENV"
+          else
+            echo "BASE_HREF=/$repo/" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build
+        run: npx ng build --base-href "$BASE_HREF"
+
+      # GitHub Pages has no "always serve index.html" rule. Without this, opening or refreshing
+      # a deep link such as /topics/5 shows GitHub's 404 page. A copy named 404.html makes Pages
+      # serve the app there, and the Angular router then shows the right screen.
+      - name: SPA fallback
+        run: cp dist/baccacode-web/browser/index.html dist/baccacode-web/browser/404.html
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/baccacode-web/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
